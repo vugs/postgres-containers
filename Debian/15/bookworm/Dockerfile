@@ -20,7 +20,7 @@ FROM postgres:15.12-bookworm
 LABEL name="PostgreSQL Container Images" \
       vendor="The CloudNativePG Contributors" \
       version="${PG_VERSION}" \
-      release="6" \
+      release="8" \
       summary="PostgreSQL Container images." \
       description="This Docker image contains PostgreSQL and Barman Cloud based on Postgres 15.12-bookworm."
 
@@ -37,6 +37,21 @@ RUN set -xe; \
 		"postgresql-${PG_MAJOR}-pg-failover-slots" \
 	; \
 	rm -fr /tmp/* ; \
+	rm -rf /var/lib/apt/lists/*;
+
+# Install TimescaleDB extension
+RUN set-xe; \
+	apt-get update; \
+	apt-get install -y ca-certificates lsb-release wget; \
+	echo "deb https://packagecloud.io/timescale/timescaledb/debian/ $(lsb_release -c -s) main" | tee /etc/apt/sources.list.d/timescaledb.list; \
+	wget --quiet -O - https://packagecloud.io/timescale/timescaledb/gpgkey | gpg --dearmor -o /etc/apt/trusted.gpg.d/timescaledb.gpg; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		"timescaledb-2-postgresql-${PG_MAJOR}" \
+		"timescaledb-toolkit-postgresql-${PG_MAJOR}" \
+	; \
+	apt-get autoremove --purge -y lsb-release wget; \
+	rm -fr /tmp/*; \
 	rm -rf /var/lib/apt/lists/*;
 
 # Install barman-cloud
